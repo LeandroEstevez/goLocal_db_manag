@@ -1,6 +1,9 @@
 package main
 
 import (
+	"encoding/json"
+	"errors"
+	"io/ioutil"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -15,15 +18,23 @@ const (
 	dbname   = "gotest"
 )
 
-type restaurant struct {
-	Name string `json:"name"`
-	Cuisine string `json:"cuisine"`
+type Response struct {
+	Restaurants []Restaurant `json:"data"`
 }
 
-var restaurants = []restaurant{
-	{Name: "El Coco", Cuisine: "Italian"},
-	{Name: "El Taco", Cuisine: "Mexican"},
+type Restaurant struct {
+	Name string `json:"restaurant_name"`
+	Phone string `json:"restaurant_phone"`
+	Website string `json:"restaurant_website"`
+	Cuisines []string `json:"cuisines"`
+	Address Address `json:"address"`
 }
+
+type Address struct {
+	FullAddress string `json:"formatted"`
+}
+
+var responseObj Response
 
 func main() {
 	router := gin.Default()
@@ -32,26 +43,46 @@ func main() {
 }
 
 func getRestaurants(c *gin.Context) {
-	// zipCode := c.Param("zipCode")
-	c.Header("Access-Control-Allow-Origin", "*")
-  c.Header("Access-Control-Allow-Methods", "PUT, POST, GET, DELETE, OPTIONS")
+	zipCode := c.Param("zipCode")
+	size := "?size=10"
+	params := "/restaurants/zip_code/" + zipCode + size
+	endPoint := "https://api.documenu.com/v2" + params
 
-	c.IndentedJSON(http.StatusOK, restaurants)
+	err := executeGetRestaurants(endPoint, c)
+	if err != nil {
+		failedDepend(c)
+	}
 }
 
-// func ConnectDB() {
-// 	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+"dbname=%s sslmode=disable", host, port, user, dbname)
+func executeGetRestaurants(endPoint string, c *gin.Context) error {
+	client := &http.Client{}
+	req, err := http.NewRequest("GET", endPoint, nil)
+	if err != nil {
+		return errors.New("failed dependency")
+	}
+	req.Header.Add("x-api-key", "6f69bcc291f26de6e81350fe6535f846")
 
-// 	db, err := sql.Open("postgres", psqlInfo)
-// 	if err != nil {
-// 		panic(err)
-// 	}
-// 	defer db.Close()
+	resp, err := client.Do(req)
+	if err != nil {
+		return errors.New("failed dependency")
+	}
+	defer resp.Body.Close()
 
-// 	err = db.Ping()
-// 	if err != nil {
-// 		panic(err)
-// 	}
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return errors.New("failed dependency")
+	}
+	json.Unmarshal(body, &responseObj)
 
-// 	fmt.Println("Conected!!")
-// }
+	c.Header("Access-Control-Allow-Origin", "*")
+  c.Header("Access-Control-Allow-Methods", "PUT, POST, GET, DELETE, OPTIONS")
+	c.IndentedJSON(http.StatusOK, responseObj)
+
+	return nil
+}
+
+func failedDepend(c *gin.Context) {
+	c.Header("Access-Control-Allow-Origin", "*")
+  c.Header("Access-Control-Allow-Methods", "PUT, POST, GET, DELETE, OPTIONS")
+	c.IndentedJSON(http.StatusFailedDependency, gin.H{"message": "error: failed dependency"})
+}
