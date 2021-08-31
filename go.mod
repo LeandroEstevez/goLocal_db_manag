@@ -1,4 +1,4 @@
-module github.com/goLocal_db_manag
+module github.com/leandroestevez/goLocal_db_manag
 
 go 1.16
 
