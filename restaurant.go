@@ -55,8 +55,5 @@ func getRestaurants(ch chan int, c *gin.Context) {
 	json.Unmarshal(body, &restaurants)
 
 	responseObj.Restaurants = restaurants
-
-	// c.Header("Access-Control-Allow-Origin", "*")
-  // c.Header("Access-Control-Allow-Methods", "PUT, POST, GET, DELETE, OPTIONS")
-	// c.IndentedJSON(http.StatusOK, responseObj)
+	ch <- 0
 }
