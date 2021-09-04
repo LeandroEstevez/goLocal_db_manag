@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 
@@ -46,7 +45,7 @@ func getWeather(ch chan int, c *gin.Context) {
 	appid := "appid=286be3842d1da260d7e15a5cdf394d2f"
 	params := zipCode + ",us" + "&" + appid
 	endPoint := "https://api.openweathermap.org/data/2.5/weather?zip=" + params
-	fmt.Println(endPoint)
+
 	client := &http.Client{}
 	req, err := http.NewRequest("GET", endPoint, nil)
 	if err != nil {
